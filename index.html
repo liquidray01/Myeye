@@ -1,0 +1,1550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>My eye Cards</title>
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      --table-bg: radial-gradient(circle at center, #2a2a2a 0%, #000 70%);
+    }
+
+    body{
+      margin:0;
+      color:#eaf1ff;
+      background: var(--table-bg);
+      background-size: cover;
+      background-position: center;
+      min-height:100vh;
+    }
+
+    body.theme-black{ --table-bg: radial-gradient(circle at center, #2a2a2a 0%, #000 70%); }
+    body.theme-green{ --table-bg: radial-gradient(circle at center, #1f6b3a 0%, #0b2f1a 70%); }
+    body.theme-red  { --table-bg: radial-gradient(circle at center, #7a1f1f 0%, #2a0808 70%); }
+
+    header{
+      padding: 14px 16px;
+      background: linear-gradient(90deg, rgba(15,27,51,.92), rgba(10,18,36,.92));
+      border-bottom:1px solid rgba(120, 160, 255, .18);
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+      position:sticky; top:0; backdrop-filter: blur(10px);
+      z-index:10;
+    }
+    header h1{ font-size: 18px; margin: 0; font-weight:900; letter-spacing:.3px; }
+    header .pill{
+      padding:6px 10px;
+      border:1px solid rgba(120, 160, 255, .25);
+      border-radius:999px;
+      font-size:12px;
+      background: rgba(10, 18, 36, .55);
+      box-shadow: 0 6px 20px rgba(0,0,0,.18);
+    }
+
+    main{ padding: 14px 16px; display:grid; gap:14px; grid-template-columns: 1.15fr .85fr; }
+    @media (max-width: 980px) { main{ grid-template-columns:1fr; } }
+
+    .panel{
+      border-radius:14px;
+      padding:12px;
+      background: linear-gradient(180deg, rgba(15,27,51,.82), rgba(10,18,36,.72));
+      border:1px solid rgba(120, 160, 255, .18);
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .col{ display:flex; flex-direction:column; gap:10px; }
+    .muted{ opacity:.82; font-size:12px; }
+    .divider{ height:1px; background: rgba(120,160,255,.18); margin:10px 0; }
+
+    .btn{
+      background: linear-gradient(180deg, rgba(40, 92, 255,.35), rgba(20, 55, 180,.25));
+      border:1px solid rgba(120,160,255,.30);
+      color:#eaf1ff;
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      box-shadow: 0 12px 26px rgba(0,0,0,.22);
+    }
+    .btn:hover{ filter: brightness(1.06); }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; filter:none; }
+    .btn.secondary{ background: rgba(0,0,0,.18); }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255, 72, 104,.30), rgba(170, 35, 72,.22));
+      border-color: rgba(255, 130, 160, .35);
+    }
+    .btn.eye{
+      background: linear-gradient(180deg, rgba(255, 215, 0,.30), rgba(180, 120, 0,.18));
+      border-color: rgba(255, 215, 0,.35);
+      color:#fff;
+    }
+
+    .log{
+      height: 220px; overflow:auto;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(120,160,255,.18);
+      border-radius:12px;
+      padding:10px;
+      font-size:12px; line-height:1.35;
+    }
+    .log div{ margin-bottom:6px; }
+
+    /* Cards */
+    .cards{ display:flex; flex-wrap:wrap; gap:8px; min-height: 40px; }
+
+    .card{
+      width: 58px; height: 78px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.20);
+      background: linear-gradient(180deg, #fbfcff 0%, #eef2ff 100%);
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:center;
+      cursor:pointer; user-select:none;
+      box-shadow: 0 10px 18px rgba(0,0,0,.28);
+      position:relative;
+    }
+    .card.dragging{ opacity:.45; }
+    .card.dropHint{ outline: 3px dashed rgba(73,182,255,.9); }
+    .card .rank{ font-size:18px; font-weight:950; }
+    .card .suit{ font-size:18px; margin-top:2px; }
+    .card.selected{ outline: 3px solid rgba(73,182,255,.95); }
+
+    .card.red{ color:#c81414; }
+    .card.black{ color:#111; }
+
+    .card.small{
+      width: 46px; height: 62px; border-radius:10px;
+      cursor:default;
+      background: linear-gradient(180deg, #fbfcff 0%, #eef2ff 100%);
+    }
+    .card.locked{ cursor:default; opacity:.98; box-shadow: 0 6px 12px rgba(0,0,0,.25); }
+
+    .card.back{
+      background: linear-gradient(135deg, rgba(44,86,255,.55), rgba(0,0,0,.25));
+      border:1px solid rgba(120,160,255,.25);
+      color:#eaf1ff;
+    }
+    .card.back .rank{ font-size:12px; opacity:.95; letter-spacing:.6px; }
+    .card.back .suit{ font-size:10px; opacity:.8; }
+
+    /* BIG piles */
+    .pileCard{
+      width: 86px;
+      height: 116px;
+      border-radius: 14px;
+    }
+    .pileCard .rank{ font-size: 14px; }
+    .pileCard .suit{ font-size: 12px; }
+
+    /* Table (players row) */
+    .tablegrid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    .playerRow{
+      border:1px dashed rgba(120,160,255,.35);
+      border-radius:14px;
+      padding:10px;
+      background: rgba(0,0,0,.16);
+    }
+    .playerRowHead{
+      display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+    }
+    .playerRowTitle{ font-weight:950; font-size:13px; }
+    .badge{
+      display:inline-block; padding:3px 8px;
+      border-radius:999px;
+      border:1px solid rgba(120,160,255,.25);
+      font-size:11px;
+      background: rgba(0,0,0,.18);
+    }
+    .meldLane{
+      margin-top:8px;
+      display:flex;
+      gap:34px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+    }
+    .meldGroup{
+      min-width: 240px;
+      border:1px solid rgba(120,160,255,.18);
+      border-radius:14px;
+      background: rgba(0,0,0,.16);
+      padding:10px;
+    }
+    .meldGroup .label{ font-weight:950; font-size:12px; margin-bottom:6px; opacity:.95; }
+
+    /* Hand rows */
+    .handGrid{ display:flex; flex-direction:column; gap:10px; }
+    .freeRow{
+      border:1px solid rgba(120,160,255,.18);
+      background: rgba(0,0,0,.22);
+      border-radius:14px;
+      padding:10px;
+    }
+    .freeRowHeader{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:8px;
+    }
+    .freeLabel{
+      font-weight:950; font-size:13px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .rowDot{
+      width:26px; height:26px; border-radius:10px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background: rgba(10,18,36,.55);
+      border:1px solid rgba(120,160,255,.18);
+      font-size:12px; font-weight:900;
+    }
+    .dropZoneHint{ font-size:11px; opacity:.8; }
+
+    /* Status boxes */
+    .status{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .turnBox{
+      padding:8px 10px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(120,160,255,.18);
+      border-radius:12px;
+    }
+
+    /* Overlay modals */
+    .overlay{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.62);
+      display:flex; align-items:center; justify-content:center; padding:18px;
+      z-index:50;
+    }
+    .modal{
+      width: min(720px, 96vw);
+      background: linear-gradient(180deg, rgba(15,27,51,.92), rgba(10,18,36,.86));
+      border:1px solid rgba(120,160,255,.20);
+      border-radius:16px;
+      padding:16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.55);
+    }
+    .modal h2{ margin:0 0 10px 0; font-size:18px; }
+    .modal label{ display:block; font-size:12px; opacity:.9; margin:8px 0 6px; }
+    .modal input{
+      width: 100%; box-sizing:border-box;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(120,160,255,.22);
+      background: rgba(0,0,0,.25);
+      color:#eaf1ff;
+      font-size:14px;
+      outline:none;
+    }
+
+    /* Piles */
+    .piles{
+      display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;
+      padding:10px;
+      border:1px solid rgba(120,160,255,.18);
+      border-radius:14px;
+      background: rgba(0,0,0,.18);
+    }
+    .pileBox{ display:flex; gap:10px; align-items:center; }
+    .pileInfo{ display:flex; flex-direction:column; gap:2px; }
+    .pileInfo .title{ font-weight:950; font-size:12px; }
+    .pileInfo .sub{ font-size:11px; opacity:.82; }
+
+    /* Discard history strip */
+    .discardStrip{
+      display:flex; flex-wrap:wrap; gap:8px;
+      padding:10px;
+      border:1px solid rgba(120,160,255,.18);
+      border-radius:14px;
+      background: rgba(0,0,0,.18);
+      max-height: 190px;
+      overflow:auto;
+    }
+
+    /* Claim UI */
+    .claimList{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+    .claimRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px;
+      border:1px solid rgba(120,160,255,.18);
+      background: rgba(0,0,0,.18);
+      border-radius:14px;
+    }
+    .claimRow .who{ font-weight:950; }
+    .claimRow .state{ font-size:12px; opacity:.86; }
+    .claimBtns{ display:flex; gap:8px; align-items:center; }
+
+    /* Round toast */
+    #roundToast{
+      position:fixed;
+      top:80px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:12px 16px;
+      border-radius:14px;
+      border:1px solid rgba(120,160,255,.25);
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      font-weight:950;
+      display:none;
+      z-index:9999;
+    }
+  </style>
+</head>
+
+<body class="theme-black">
+<header>
+  <h1>My eye Cards</h1>
+
+  <span class="pill" id="playerPill">Player: —</span>
+  <span class="pill" id="roundPill">Round: 1</span>
+  <span class="pill" id="deckPill">Deck: 0</span>
+  <span class="pill" id="turnPill">Turn: —</span>
+  <span class="pill" id="openGatePill">Drop-to-table: Locked</span>
+
+  <div class="row" style="margin-left:auto;">
+    <button class="btn secondary" onclick="setTheme('black')">🖤 Black</button>
+    <button class="btn secondary" onclick="setTheme('green')">💚 Green</button>
+    <button class="btn secondary" onclick="setTheme('red')">❤️ Red</button>
+  </div>
+</header>
+
+<div id="roundToast">Round 1</div>
+
+<!-- Start -->
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <h2>Welcome to <span style="font-weight:950;">My eye Cards</span></h2>
+    <div class="muted">Enter your name to start. The computer deals automatically.</div>
+    <label for="nameInput">Your name</label>
+    <input id="nameInput" placeholder="Type your name..." maxlength="18" />
+    <div class="row" style="margin-top:12px; justify-content:flex-end;">
+      <button class="btn" id="btnStart">Start</button>
+    </div>
+    <div class="divider"></div>
+    <div class="muted" style="line-height:1.35;">
+      <div><b>Round 1:</b> Escalera (same suit, 3+) + Trio (3 same rank).</div>
+      <div><b>Discard rules:</b> discard pile is empty until someone discards.</div>
+      <div><b>After each discard:</b> next player decides first. If they pass, others can try “My eye?”.</div>
+      <div><b>Penalty:</b> out-of-turn winner gets discard + 2 cards from the bunch.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Offer next player first -->
+<div class="overlay" id="offerOverlay" style="display:none;">
+  <div class="modal">
+    <div class="row" style="justify-content:space-between; align-items:flex-start;">
+      <div>
+        <h2 style="margin:0;">Next Player Offer</h2>
+        <div class="muted">First, the next player decides: <b>My eye?</b> or <b>Pass</b>.</div>
+      </div>
+      <div class="badge" id="offerCardBadge">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="claimRow">
+      <div>
+        <div class="who" id="offerWho">—</div>
+        <div class="state" id="offerState">Waiting...</div>
+      </div>
+      <div class="claimBtns">
+        <button class="btn eye" id="btnOfferEye">My eye?</button>
+        <button class="btn secondary" id="btnOfferPass">Pass</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Claim others (only if next player passed) -->
+<div class="overlay" id="claimOverlay" style="display:none;">
+  <div class="modal">
+    <div class="row" style="justify-content:space-between; align-items:flex-start;">
+      <div>
+        <h2 style="margin:0;">Discard Claim</h2>
+        <div class="muted">Next player passed. First “My eye?” wins.</div>
+      </div>
+      <div class="badge" id="claimCardBadge">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="muted">Players responding:</div>
+    <div class="claimList" id="claimList"></div>
+  </div>
+</div>
+
+<main>
+  <section class="panel col">
+    <div class="status">
+      <div class="turnBox"><strong id="p0Name">You</strong> (<span id="youCount">0</span>) — <span id="youOpened" class="badge">Not opened</span></div>
+      <div class="turnBox"><strong>CPU 1</strong> (<span id="cpu1Count">0</span>) — <span id="cpu1Opened" class="badge">Not opened</span></div>
+      <div class="turnBox"><strong>CPU 2</strong> (<span id="cpu2Count">0</span>) — <span id="cpu2Opened" class="badge">Not opened</span></div>
+      <div class="turnBox"><strong>CPU 3</strong> (<span id="cpu3Count">0</span>) — <span id="cpu3Opened" class="badge">Not opened</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="piles">
+      <div class="pileBox">
+        <div id="deckCard" class="card back pileCard" title="Deck (bunch) facing down (click to draw)">
+          <div class="rank">BUNCH</div>
+          <div class="suit">🂠</div>
+        </div>
+        <div class="pileInfo">
+          <div class="title">Deck (face down)</div>
+          <div class="sub">Cards left: <span id="deckLeft">0</span></div>
+        </div>
+      </div>
+
+      <div class="pileBox">
+        <div id="discardTopCard" class="card pileCard" style="cursor:default;">
+          <div class="rank">—</div>
+          <div class="suit">—</div>
+        </div>
+        <div class="pileInfo">
+          <div class="title">Discard (top card)</div>
+          <div class="sub">History below</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="discardStrip" id="discardStrip"></div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <button class="btn secondary" id="btnRestartRound">Restart Round (CPU re-deals)</button>
+      <span class="muted">Hand has 4 FREE rows — drag cards anywhere (cards keep suit/rank).</span>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btnDrawDeck">Draw from Deck</button>
+      <button class="btn" id="btnDrawDiscard" title="Only allowed during your draw step">Draw from Discard (your turn only)</button>
+      <button class="btn" id="btnOpen">Open (Put Escalera + Trio on Table)</button>
+      <button class="btn" id="btnDropToMeld">Drop Selected onto Target Meld</button>
+      <button class="btn danger" id="btnDiscard">Discard Selected (End Turn)</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="row">
+        <strong>Your Hand (4 free rows)</strong>
+        <span class="muted">Selected: <span id="selCount">0</span></span>
+      </div>
+      <div class="handGrid" id="handGrid"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <strong>Game Log</strong>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <aside class="panel col">
+    <div class="row" style="justify-content:space-between; align-items:flex-start;">
+      <div>
+        <strong>Table</strong>
+        <div class="muted">Each player: Escalera + Trio on the same row (big space).</div>
+      </div>
+      <div class="muted">Target meld: <span id="targetMeld">None</span></div>
+    </div>
+    <div class="tablegrid" id="table"></div>
+  </aside>
+</main>
+
+<script>
+function setTheme(theme){
+  document.body.classList.remove("theme-black","theme-green","theme-red");
+  document.body.classList.add("theme-" + theme);
+}
+
+function showRoundToast(roundNumber){
+  const t = document.getElementById("roundToast");
+  t.textContent = `Round ${roundNumber}`;
+  t.style.display = "block";
+  clearTimeout(window.__roundToastTimer);
+  window.__roundToastTimer = setTimeout(()=>{ t.style.display = "none"; }, 2000);
+}
+
+(() => {
+  const CPU_TURN_DELAY_MS = 5000;
+
+  const SUITS = ["♠","♥","♦","♣"];
+  const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  const RANK_VAL = (r) => ({A:1,J:11,Q:12,K:13}[r] ?? parseInt(r,10));
+  const IS_RED = (s) => (s==="♥" || s==="♦");
+  const cardLabel = (c)=>`${c.r}${c.s}`;
+
+  function makeDeck2(){
+    const deck=[];
+    for(let d=0; d<2; d++){
+      for(const s of SUITS){
+        for(const r of RANKS){
+          deck.push({r,s, id: crypto.randomUUID()});
+        }
+      }
+    }
+    for(let i=deck.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [deck[i],deck[j]]=[deck[j],deck[i]];
+    }
+    return deck;
+  }
+
+  const state = {
+    started:false,
+    round: 1,
+    playerName:"Player",
+    deck:[],
+    discard:[],
+    players:[
+      { name:"Player", hand:[], opened:false },
+      { name:"CPU 1", hand:[], opened:false },
+      { name:"CPU 2", hand:[], opened:false },
+      { name:"CPU 3", hand:[], opened:false },
+    ],
+    current:0,
+    phase:"need_draw",
+    selected:new Set(),
+    targetMeldId:null,
+    melds:[],
+    handRows:[[],[],[],[]],
+
+    offer:{ active:false, discarderIndex:null, discardCard:null, nextPlayerIndex:null, answered:false },
+    claim:{ active:false, discarderIndex:null, discardCard:null, nextPlayerIndex:null, responded:new Map(), winnerIndex:null, lock:false }
+  };
+
+  const el = (id)=>document.getElementById(id);
+
+  const startOverlay = el("startOverlay");
+  const nameInput = el("nameInput");
+  const btnStart = el("btnStart");
+
+  const offerOverlay = el("offerOverlay");
+  const offerCardBadge = el("offerCardBadge");
+  const offerWho = el("offerWho");
+  const offerState = el("offerState");
+  const btnOfferEye = el("btnOfferEye");
+  const btnOfferPass = el("btnOfferPass");
+
+  const claimOverlay = el("claimOverlay");
+  const claimCardBadge = el("claimCardBadge");
+  const claimList = el("claimList");
+
+  const playerPill = el("playerPill");
+  const roundPill = el("roundPill");
+  const deckPill = el("deckPill");
+  const turnPill = el("turnPill");
+  const openGatePill = el("openGatePill");
+
+  const youCount = el("youCount");
+  const cpu1Count = el("cpu1Count");
+  const cpu2Count = el("cpu2Count");
+  const cpu3Count = el("cpu3Count");
+
+  const youOpened = el("youOpened");
+  const cpu1Opened = el("cpu1Opened");
+  const cpu2Opened = el("cpu2Opened");
+  const cpu3Opened = el("cpu3Opened");
+
+  const selCount = el("selCount");
+  const p0Name = el("p0Name");
+  const targetMeld = el("targetMeld");
+
+  const deckLeft = el("deckLeft");
+  const discardStrip = el("discardStrip");
+  const discardTopCard = el("discardTopCard");
+  const deckCard = el("deckCard");
+
+  const handGrid = el("handGrid");
+  const tableEl = el("table");
+  const logEl = el("log");
+
+  const btnRestartRound = el("btnRestartRound");
+  const btnDrawDeck = el("btnDrawDeck");
+  const btnDrawDiscard = el("btnDrawDiscard");
+  const btnOpen = el("btnOpen");
+  const btnDropToMeld = el("btnDropToMeld");
+  const btnDiscard = el("btnDiscard");
+
+  function log(msg){
+    const d=document.createElement("div");
+    d.textContent=msg;
+    logEl.appendChild(d);
+    logEl.scrollTop=logEl.scrollHeight;
+  }
+
+  function openedCount(){ return state.players.filter(p=>p.opened).length; }
+  function dropUnlocked(){ return openedCount() >= 2; }
+  function blocked(){ return state.offer.active || state.claim.active; }
+
+  function rebuildHandRowsFromHand(){
+    state.handRows = [[],[],[],[]];
+    const ids = state.players[0].hand.map(c=>c.id);
+    for(let i=0;i<ids.length;i++) state.handRows[i%4].push(ids[i]);
+  }
+
+  function ensureRowsIntegrity(){
+    const handIds = new Set(state.players[0].hand.map(c=>c.id));
+    const seen = new Set();
+    for(let r=0;r<4;r++){
+      state.handRows[r] = state.handRows[r].filter(id => handIds.has(id) && !seen.has(id) && (seen.add(id), true));
+    }
+    for(const id of handIds){
+      if(!seen.has(id)) state.handRows[3].push(id);
+    }
+  }
+
+  function getCardByIdInPlayerHand(id){
+    return state.players[0].hand.find(c=>c.id===id) || null;
+  }
+
+  function removeIdFromRows(id){
+    for(let r=0;r<4;r++){
+      const idx = state.handRows[r].indexOf(id);
+      if(idx>=0) state.handRows[r].splice(idx,1);
+    }
+  }
+
+  function insertIdBefore(rowIndex, draggedId, targetId){
+    removeIdFromRows(draggedId);
+    const row = state.handRows[rowIndex];
+    const t = row.indexOf(targetId);
+    if(t>=0) row.splice(t,0,draggedId);
+    else row.push(draggedId);
+  }
+
+  function appendIdToRow(rowIndex, id){
+    removeIdFromRows(id);
+    state.handRows[rowIndex].push(id);
+  }
+
+  function isTrio(cards){
+    if(cards.length !== 3) return false;
+    const r = cards[0].r;
+    return cards.every(c=>c.r===r);
+  }
+
+  function isSameSuitStair(cards){
+    if(cards.length < 3) return false;
+    const suit = cards[0].s;
+    if(!cards.every(c=>c.s===suit)) return false;
+
+    const low = [...new Set(cards.map(c=>RANK_VAL(c.r)))].sort((a,b)=>a-b);
+    if(low.length !== cards.length) return false;
+    let okLow=true;
+    for(let i=1;i<low.length;i++){
+      if(low[i] !== low[i-1] + 1){ okLow=false; break; }
+    }
+    if(okLow) return true;
+
+    const hv = cards.map(c=>c.r==="A" ? 14 : RANK_VAL(c.r));
+    const high = [...new Set(hv)].sort((a,b)=>a-b);
+    if(high.length !== cards.length) return false;
+    for(let i=1;i<high.length;i++){
+      if(high[i] !== high[i-1] + 1) return false;
+    }
+    return true;
+  }
+
+  function stairModeAndEnds(meldCards){
+    const low = meldCards.map(c=>RANK_VAL(c.r));
+    const ul = [...new Set(low)];
+    if(ul.length===meldCards.length){
+      const s=ul.slice().sort((a,b)=>a-b);
+      let ok=true;
+      for(let i=1;i<s.length;i++) if(s[i]!==s[i-1]+1){ ok=false; break; }
+      if(ok) return {mode:"low", min:s[0], max:s[s.length-1], suit:meldCards[0].s};
+    }
+
+    const hv = meldCards.map(c=>c.r==="A"?14:RANK_VAL(c.r));
+    const uh = [...new Set(hv)];
+    if(uh.length===meldCards.length){
+      const s=uh.slice().sort((a,b)=>a-b);
+      let ok=true;
+      for(let i=1;i<s.length;i++) if(s[i]!==s[i-1]+1){ ok=false; break; }
+      if(ok) return {mode:"high", min:s[0], max:s[s.length-1], suit:meldCards[0].s};
+    }
+    return null;
+  }
+
+  function canAddToTrio(card, meld){ return card.r === meld.cards[0].r; }
+
+  function canAddToStair(card, meld){
+    if(card.s !== meld.cards[0].s) return false;
+    const info = stairModeAndEnds(meld.cards);
+    if(!info) return false;
+
+    const v = (info.mode==="high") ? (card.r==="A"?14:RANK_VAL(card.r)) : RANK_VAL(card.r);
+    const existing = meld.cards.map(c => (info.mode==="high" ? (c.r==="A"?14:RANK_VAL(c.r)) : RANK_VAL(c.r)));
+    if(existing.includes(v)) return false;
+    return (v===info.min-1) || (v===info.max+1);
+  }
+
+  function createMeld(ownerIndex, type, cards){
+    state.melds.push({ id: crypto.randomUUID(), ownerIndex, type, cards: cards.map(c=>({...c})) });
+  }
+
+  function removeCardsFromHand(playerIndex, cardIds){
+    const p = state.players[playerIndex];
+    p.hand = p.hand.filter(c=>!cardIds.has(c.id));
+    if(playerIndex===0){
+      for(const id of cardIds) removeIdFromRows(id);
+    }
+  }
+
+  function removeTopDiscard(cardId){
+    const top = state.discard[state.discard.length-1];
+    if(top && top.id===cardId){ state.discard.pop(); return; }
+    const idx = state.discard.findIndex(c=>c.id===cardId);
+    if(idx>=0) state.discard.splice(idx,1);
+  }
+
+  function startCpuAfterDelay(){
+    setTimeout(cpuTakeTurn, CPU_TURN_DELAY_MS);
+  }
+
+  function renderDiscardTop(){
+    discardTopCard.classList.remove("red","black");
+    if(state.discard.length===0){
+      discardTopCard.innerHTML = `<div class="rank">—</div><div class="suit">—</div>`;
+      discardTopCard.style.cursor = "default";
+      return;
+    }
+    const c = state.discard[state.discard.length-1];
+    discardTopCard.classList.add(IS_RED(c.s) ? "red" : "black");
+    discardTopCard.innerHTML = `<div class="rank">${c.r}</div><div class="suit">${c.s}</div>`;
+    discardTopCard.style.cursor = "default";
+  }
+
+  function render(){
+    ensureRowsIntegrity();
+
+    playerPill.textContent = `Player: ${state.playerName}`;
+    roundPill.textContent = `Round: ${state.round}`;
+    deckPill.textContent = `Deck: ${state.deck.length}`;
+    deckLeft.textContent = state.deck.length;
+
+    turnPill.textContent = `Turn: ${state.players[state.current].name} (${state.phase.replace("_"," ")})`;
+    openGatePill.textContent = `Drop-to-table: ${dropUnlocked() ? "Unlocked" : "Locked (need 2 opened)"}`;
+
+    youCount.textContent = state.players[0].hand.length;
+    cpu1Count.textContent = state.players[1].hand.length;
+    cpu2Count.textContent = state.players[2].hand.length;
+    cpu3Count.textContent = state.players[3].hand.length;
+
+    youOpened.textContent = state.players[0].opened ? "Opened" : "Not opened";
+    cpu1Opened.textContent = state.players[1].opened ? "Opened" : "Not opened";
+    cpu2Opened.textContent = state.players[2].opened ? "Opened" : "Not opened";
+    cpu3Opened.textContent = state.players[3].opened ? "Opened" : "Not opened";
+
+    selCount.textContent = state.selected.size;
+    p0Name.textContent = state.playerName;
+    targetMeld.textContent = state.targetMeldId ? state.targetMeldId.slice(0,6) : "None";
+
+    // Discard history
+    discardStrip.innerHTML = "";
+    if(state.discard.length === 0){
+      const t=document.createElement("div");
+      t.className="muted";
+      t.textContent="No discards yet.";
+      discardStrip.appendChild(t);
+    }else{
+      const disc = state.discard.slice().reverse();
+      for(const c of disc){
+        const d=document.createElement("div");
+        d.className = `card small ${IS_RED(c.s)?"red":"black"}`;
+        d.innerHTML = `<div class="rank">${c.r}</div><div class="suit">${c.s}</div>`;
+        discardStrip.appendChild(d);
+      }
+    }
+
+    renderDiscardTop();
+
+    // overlays
+    offerOverlay.style.display = state.offer.active ? "flex" : "none";
+    if(state.offer.active){
+      offerCardBadge.textContent = cardLabel(state.offer.discardCard);
+      offerWho.textContent = state.players[state.offer.nextPlayerIndex].name;
+      offerState.textContent = (state.offer.nextPlayerIndex===0) ? "Choose now" : "CPU thinking...";
+      const nextIsYou = state.offer.nextPlayerIndex===0;
+      btnOfferEye.disabled = !nextIsYou;
+      btnOfferPass.disabled = !nextIsYou;
+    }
+
+    claimOverlay.style.display = state.claim.active ? "flex" : "none";
+    if(state.claim.active){
+      claimCardBadge.textContent = cardLabel(state.claim.discardCard);
+      buildClaimUI();
+    }
+
+    // Buttons
+    const isYourTurn = state.current===0;
+    const b = blocked();
+    btnDrawDeck.disabled    = b || !(state.started && isYourTurn && state.phase==="need_draw" && state.deck.length>0);
+    btnDrawDiscard.disabled = b || !(state.started && isYourTurn && state.phase==="need_draw" && state.discard.length>0);
+    btnOpen.disabled        = b || !(state.started && isYourTurn && state.phase==="need_discard");
+    btnDiscard.disabled     = b || !(state.started && isYourTurn && state.phase==="need_discard" && state.selected.size===1);
+    btnDropToMeld.disabled  = b || !(state.started && isYourTurn && state.phase==="need_discard"
+                              && state.players[0].opened && dropUnlocked()
+                              && state.targetMeldId && state.selected.size>=1);
+
+    // Hand
+    handGrid.innerHTML = "";
+    for(let r=0;r<4;r++){
+      const wrap=document.createElement("div");
+      wrap.className="freeRow";
+      wrap.dataset.row=String(r);
+      wrap.innerHTML = `
+        <div class="freeRowHeader">
+          <div class="freeLabel"><span class="rowDot">ROW ${r+1}</span> Arrange any cards here</div>
+          <div class="dropZoneHint">Drop cards here to move/append</div>
+        </div>
+        <div class="cards" id="handRow${r}"></div>
+      `;
+      const rowEl = wrap.querySelector(`#handRow${r}`);
+
+      wrap.ondragover = (e)=>e.preventDefault();
+      wrap.ondrop = (e)=>{
+        e.preventDefault();
+        if(blocked()) return;
+        const draggedId = e.dataTransfer.getData("text/plain");
+        if(!draggedId) return;
+        appendIdToRow(r, draggedId);
+        render();
+      };
+
+      for(const id of state.handRows[r]){
+        const c = getCardByIdInPlayerHand(id);
+        if(!c) continue;
+
+        const div=document.createElement("div");
+        div.className = `card ${IS_RED(c.s)?"red":"black"}` + (state.selected.has(id) ? " selected" : "");
+        div.draggable = !blocked();
+        div.dataset.id=id;
+        div.innerHTML = `<div class="rank">${c.r}</div><div class="suit">${c.s}</div>`;
+
+        div.addEventListener("click", ()=>{
+          if(blocked()) return;
+          if(!state.started) return;
+          if(state.current!==0) return;
+          if(state.phase==="need_draw") return;
+          if(div.classList.contains("dragging")) return;
+
+          if(state.selected.has(id)) state.selected.delete(id);
+          else state.selected.add(id);
+          render();
+        });
+
+        div.addEventListener("dragstart", (e)=>{
+          if(blocked()) return e.preventDefault();
+          div.classList.add("dragging");
+          e.dataTransfer.setData("text/plain", id);
+          e.dataTransfer.effectAllowed="move";
+        });
+
+        div.addEventListener("dragend", ()=>{
+          div.classList.remove("dragging");
+          document.querySelectorAll(".card.dropHint").forEach(x=>x.classList.remove("dropHint"));
+        });
+
+        div.addEventListener("dragover", (e)=>{
+          if(blocked()) return;
+          e.preventDefault();
+          div.classList.add("dropHint");
+        });
+
+        div.addEventListener("dragleave", ()=>div.classList.remove("dropHint"));
+
+        div.addEventListener("drop", (e)=>{
+          if(blocked()) return;
+          e.preventDefault();
+          div.classList.remove("dropHint");
+          const draggedId=e.dataTransfer.getData("text/plain");
+          if(!draggedId || draggedId===id) return;
+          insertIdBefore(r, draggedId, id);
+          render();
+        });
+
+        rowEl.appendChild(div);
+      }
+
+      handGrid.appendChild(wrap);
+    }
+
+    // Table
+    tableEl.innerHTML = "";
+    for(let pi=0; pi<4; pi++){
+      const rowBox=document.createElement("div");
+      rowBox.className="playerRow";
+
+      const p = state.players[pi];
+      rowBox.innerHTML = `
+        <div class="playerRowHead">
+          <div>
+            <div class="playerRowTitle">${p.name}</div>
+            <div class="muted">${p.opened ? "Opened" : "Not opened"} • Melds locked</div>
+          </div>
+          <div class="badge">${p.opened ? "OPEN" : "HIDDEN"}</div>
+        </div>
+        <div class="meldLane">
+          <div class="meldGroup" data-owner="${pi}" data-kind="stair">
+            <div class="label">Escalera (same suit)</div>
+            <div class="cards"></div>
+          </div>
+          <div class="meldGroup" data-owner="${pi}" data-kind="trio">
+            <div class="label">Trio</div>
+            <div class="cards"></div>
+          </div>
+        </div>
+      `;
+
+      const stairBox = rowBox.querySelector(`.meldGroup[data-kind="stair"] .cards`);
+      const trioBox  = rowBox.querySelector(`.meldGroup[data-kind="trio"] .cards`);
+
+      const pMelds = state.melds.filter(m => m.ownerIndex===pi);
+      const stair = pMelds.find(m=>m.type==="stair") || null;
+      const trio  = pMelds.find(m=>m.type==="trio") || null;
+
+      function drawMeld(meld, container){
+        if(!meld){ container.innerHTML = `<span class="muted">—</span>`; return; }
+        const showCards = (meld.type==="stair")
+          ? meld.cards.slice().sort((a,b)=>RANK_VAL(a.r)-RANK_VAL(b.r))
+          : meld.cards.slice();
+
+        for(const c of showCards){
+          const cd=document.createElement("div");
+          cd.className = `card small locked ${IS_RED(c.s)?"red":"black"}`;
+          cd.innerHTML = `<div class="rank">${c.r}</div><div class="suit">${c.s}</div>`;
+          container.appendChild(cd);
+        }
+      }
+
+      drawMeld(stair, stairBox);
+      drawMeld(trio, trioBox);
+
+      rowBox.querySelectorAll(".meldGroup").forEach(g=>{
+        g.addEventListener("click", ()=>{
+          const kind = g.dataset.kind;
+          const owner = parseInt(g.dataset.owner,10);
+          const meld = state.melds.find(m => m.ownerIndex===owner && m.type===kind);
+          if(meld) state.targetMeldId = meld.id;
+          render();
+        });
+      });
+
+      tableEl.appendChild(rowBox);
+    }
+  }
+
+  // Deal / reset
+  function cpuDealRound1(){
+    state.round = 1;
+    showRoundToast(state.round);
+
+    state.deck = makeDeck2();
+    state.discard = [];
+    state.melds = [];
+    state.targetMeldId = null;
+    state.selected.clear();
+
+    state.offer.active=false;
+    state.claim.active=false;
+
+    for(const p of state.players){
+      p.hand=[];
+      p.opened=false;
+    }
+
+    for(let i=0;i<13;i++){
+      for(let pi=0;pi<4;pi++){
+        state.players[pi].hand.push(state.deck.pop());
+      }
+    }
+
+    state.current=0;
+    state.phase="need_draw";
+
+    rebuildHandRowsFromHand();
+
+    logEl.innerHTML="";
+    log("Round 1 started. Discard is empty until a player discards.");
+    render();
+  }
+
+  // Draw
+  function drawCard(fromDiscard){
+    const p = state.players[state.current];
+    const card = fromDiscard ? state.discard.pop() : state.deck.pop();
+    if(!card) return;
+    p.hand.push(card);
+    if(state.current===0) state.handRows[3].push(card.id);
+    log(`${p.name} drew ${fromDiscard ? "from discard" : "from deck"}: ${cardLabel(card)}`);
+    state.phase="need_discard";
+    render();
+  }
+
+  // Offer / Claim logic
+  function startOfferNext(discarderIndex, discardCard){
+    const nextP = (discarderIndex + 1) % 4;
+
+    state.offer.active=true;
+    state.offer.discarderIndex=discarderIndex;
+    state.offer.discardCard=discardCard;
+    state.offer.nextPlayerIndex=nextP;
+    state.offer.answered=false;
+
+    log(`Offer: ${state.players[nextP].name} decides first for ${cardLabel(discardCard)}.`);
+    render();
+
+    if(nextP !== 0){
+      const delay = 550 + Math.random()*1200;
+      setTimeout(()=>{
+        if(!state.offer.active) return;
+        const want = cpuWantsDiscard(nextP, discardCard, true);
+        resolveOffer(want ? "eye" : "pass");
+      }, delay);
+    }
+  }
+
+  function resolveOffer(choice){
+    if(!state.offer.active || state.offer.answered) return;
+    state.offer.answered=true;
+
+    const nextP = state.offer.nextPlayerIndex;
+    const card = state.offer.discardCard;
+
+    if(choice==="eye"){
+      state.offer.active=false;
+      removeTopDiscard(card.id);
+      state.players[nextP].hand.push(card);
+
+      log(`${state.players[nextP].name} took ${cardLabel(card)} (My eye?) as the next turn draw. No other popup.`);
+      state.current = nextP;
+      state.phase = "need_discard";
+      render();
+
+      if(state.current!==0) setTimeout(cpuPlayAfterDraw(state.current), CPU_TURN_DELAY_MS);
+      return;
+    }
+
+    state.offer.active=false;
+    log(`${state.players[nextP].name} PASSED. Now others may claim (My eye?).`);
+    startClaimOthers(state.offer.discarderIndex, card, nextP);
+  }
+
+  function startClaimOthers(discarderIndex, discardCard, nextPlayerIndex){
+    state.claim.active=true;
+    state.claim.discarderIndex=discarderIndex;
+    state.claim.discardCard=discardCard;
+    state.claim.nextPlayerIndex=nextPlayerIndex;
+    state.claim.responded=new Map();
+    state.claim.winnerIndex=null;
+    state.claim.lock=false;
+
+    for(let pi=0; pi<4; pi++){
+      if(pi===discarderIndex || pi===nextPlayerIndex) state.claim.responded.set(pi,"pass");
+      else state.claim.responded.set(pi,"thinking");
+    }
+
+    scheduleCpuClaimDecisions();
+    render();
+
+    setTimeout(()=>{
+      if(!state.claim.active || state.claim.lock) return;
+      const anyEye = [...state.claim.responded.values()].some(v=>v==="eye");
+      if(!anyEye){
+        log("No one claimed the discard. Claim ends.");
+        endClaimWindow(null);
+      }
+    }, 2600);
+  }
+
+  function buildClaimUI(){
+    claimList.innerHTML = "";
+    for(let pi=0; pi<4; pi++){
+      const whoName = state.players[pi].name;
+      const st = state.claim.responded.get(pi) || "thinking";
+      const isBlocked = (pi===state.claim.discarderIndex || pi===state.claim.nextPlayerIndex);
+
+      const row=document.createElement("div");
+      row.className="claimRow";
+
+      const left=document.createElement("div");
+      left.innerHTML = `<div class="who">${whoName}</div><div class="state">${
+        isBlocked ? "Not eligible" :
+        (st==="thinking" ? "Thinking..." : (st==="eye" ? "Pressed My eye?" : "Passed"))
+      }</div>`;
+
+      const right=document.createElement("div");
+      right.className="claimBtns";
+
+      const btnEye=document.createElement("button");
+      btnEye.className="btn eye";
+      btnEye.textContent="My eye?";
+      const btnPass=document.createElement("button");
+      btnPass.className="btn secondary";
+      btnPass.textContent="Pass";
+
+      const youCanClick = (pi===0) && state.claim.active && !state.claim.lock && !isBlocked && (st==="thinking");
+      btnEye.disabled = !youCanClick;
+      btnPass.disabled = !youCanClick;
+
+      btnEye.addEventListener("click", ()=> playerRespondClaim(0, "eye"));
+      btnPass.addEventListener("click", ()=> playerRespondClaim(0, "pass"));
+
+      if(pi!==0){ btnEye.disabled=true; btnPass.disabled=true; }
+      if(isBlocked){ btnEye.disabled=true; btnPass.disabled=true; }
+
+      right.appendChild(btnEye);
+      right.appendChild(btnPass);
+
+      row.appendChild(left);
+      row.appendChild(right);
+      claimList.appendChild(row);
+    }
+  }
+
+  function cpuWantsDiscard(pi, card, isNextOffer=false){
+    const hand = state.players[pi].hand;
+
+    const sameRank = hand.filter(c=>c.r===card.r).length;
+    if(sameRank>=2) return Math.random() < (isNextOffer ? 0.92 : 0.85);
+
+    const sameSuit = hand.filter(c=>c.s===card.s);
+    const vLow = RANK_VAL(card.r);
+    const vHigh = (card.r==="A") ? 14 : RANK_VAL(card.r);
+
+    const adjLow = sameSuit.some(c => Math.abs(RANK_VAL(c.r) - vLow) === 1);
+    const adjHigh = sameSuit.some(c => Math.abs((c.r==="A"?14:RANK_VAL(c.r)) - vHigh) === 1);
+    if(adjLow || adjHigh) return Math.random() < (isNextOffer ? 0.72 : 0.62);
+
+    if(dropUnlocked()){
+      const droppable = state.melds.some(m => (m.type==="trio" ? canAddToTrio(card,m) : canAddToStair(card,m)));
+      if(droppable) return Math.random() < (isNextOffer ? 0.78 : 0.70);
+    }
+
+    return Math.random() < (isNextOffer ? 0.25 : 0.18);
+  }
+
+  function scheduleCpuClaimDecisions(){
+    for(let pi=1; pi<4; pi++){
+      if(pi===state.claim.discarderIndex) continue;
+      if(pi===state.claim.nextPlayerIndex) continue;
+
+      const delay = 550 + Math.random()*1200;
+      setTimeout(()=>{
+        if(!state.claim.active || state.claim.lock) return;
+        if(state.claim.responded.get(pi)!=="thinking") return;
+        const want = cpuWantsDiscard(pi, state.claim.discardCard, false);
+        playerRespondClaim(pi, want ? "eye" : "pass");
+      }, delay);
+    }
+  }
+
+  function playerRespondClaim(pi, response){
+    if(!state.claim.active) return;
+    if(state.claim.lock) return;
+    if(pi===state.claim.discarderIndex) return;
+    if(pi===state.claim.nextPlayerIndex) return;
+    if(state.claim.responded.get(pi)!=="thinking") return;
+
+    state.claim.responded.set(pi, response);
+
+    if(response==="eye"){
+      state.claim.winnerIndex = pi;
+      state.claim.lock = true;
+      log(`${state.players[pi].name} clicked MY EYE first!`);
+      endClaimWindow(pi);
+      return;
+    }
+
+    for(let j=0;j<4;j++){
+      if(j===state.claim.discarderIndex || j===state.claim.nextPlayerIndex) continue;
+      if(state.claim.responded.get(j)==="thinking"){ render(); return; }
+    }
+    endClaimWindow(null);
+  }
+
+  function endClaimWindow(winnerIndex){
+    const discardCard = state.claim.discardCard;
+    const nextP = state.claim.nextPlayerIndex;
+
+    state.claim.active=false;
+
+    if(winnerIndex===null){
+      state.current = nextP;
+      state.phase = "need_draw";
+      render();
+      if(state.current!==0) startCpuAfterDelay();
+      return;
+    }
+
+    removeTopDiscard(discardCard.id);
+    const winner = state.players[winnerIndex];
+    winner.hand.push(discardCard);
+
+    const a = state.deck.pop(); const b = state.deck.pop();
+    if(a) winner.hand.push(a);
+    if(b) winner.hand.push(b);
+
+    log(`${winner.name} claimed OUT OF TURN: got ${cardLabel(discardCard)} + 2 cards from bunch.`);
+
+    state.current = nextP;
+    state.phase = "need_draw";
+    render();
+    if(state.current!==0) startCpuAfterDelay();
+  }
+
+  // Open / Drop / Discard (player only)
+  function openWithSelected(){
+    const p = state.players[0];
+    if(p.opened){ log("You already opened."); return; }
+
+    const chosen = p.hand.filter(c=>state.selected.has(c.id));
+    if(chosen.length < 6){ log("Select Escalera (3+) + Trio (3) to Open."); return; }
+
+    const ids = chosen.map(c=>c.id);
+    function combos(arr,k,start=0,path=[],out=[]){
+      if(path.length===k){ out.push([...path]); return out; }
+      for(let i=start;i<arr.length;i++){
+        path.push(arr[i]); combos(arr,k,i+1,path,out); path.pop();
+      }
+      return out;
+    }
+
+    const trioCombos = combos(ids,3);
+    for(const trioIds of trioCombos){
+      const trioCards = trioIds.map(id=>chosen.find(c=>c.id===id));
+      if(!isTrio(trioCards)) continue;
+
+      const remaining = chosen.filter(c=>!trioIds.includes(c.id));
+      for(let len=remaining.length; len>=3; len--){
+        const stairCombos = combos(remaining.map(c=>c.id), len);
+        for(const stairIds of stairCombos){
+          const stairCards = stairIds.map(id=>remaining.find(c=>c.id===id));
+          if(!isSameSuitStair(stairCards)) continue;
+
+          createMeld(0,"stair",stairCards);
+          createMeld(0,"trio",trioCards);
+
+          const rm = new Set([...trioIds, ...stairIds]);
+          removeCardsFromHand(0, rm);
+
+          state.selected.clear();
+          p.opened=true;
+          log(`${state.playerName} OPENED (Escalera + Trio locked).`);
+          render();
+          return;
+        }
+      }
+    }
+    log("That selection doesn’t contain a valid Escalera + Trio.");
+  }
+
+  function dropSelectedToTargetMeld(){
+    if(!dropUnlocked()){ log("Dropping LOCKED until 2 players opened."); return; }
+    const p=state.players[0];
+    if(!p.opened){ log("You must Open first."); return; }
+    const meld = state.melds.find(m=>m.id===state.targetMeldId);
+    if(!meld){ log("Click a table meld to target it."); return; }
+
+    const chosenIds=[...state.selected];
+    const chosenCards=chosenIds.map(id=>getCardByIdInPlayerHand(id)).filter(Boolean);
+    if(!chosenCards.length){ log("Select cards first."); return; }
+
+    const canAdd = (card)=> meld.type==="trio" ? canAddToTrio(card,meld) : canAddToStair(card,meld);
+    const valid=chosenCards.filter(canAdd);
+    if(!valid.length){ log("None can be dropped to that meld."); return; }
+
+    if(meld.type==="stair"){
+      let added=0, progress=true;
+      while(progress){
+        progress=false;
+        for(const c of valid){
+          if(meld.cards.some(x=>x.id===c.id)) continue;
+          if(canAddToStair(c, meld)){
+            meld.cards.push(c);
+            added++; progress=true;
+          }
+        }
+      }
+      if(!added){ log("Couldn’t extend that Escalera."); return; }
+    }else{
+      for(const c of valid) meld.cards.push(c);
+    }
+
+    const addedIds=new Set(valid.map(c=>c.id));
+    removeCardsFromHand(0, addedIds);
+    state.selected.clear();
+    log(`${state.playerName} dropped ${addedIds.size} card(s) onto table.`);
+    render();
+  }
+
+  function discardSelected(){
+    const p = state.players[0];
+    const id=[...state.selected][0];
+    const idx=p.hand.findIndex(c=>c.id===id);
+    if(idx<0) return;
+
+    const [card]=p.hand.splice(idx,1);
+    removeIdFromRows(id);
+    state.selected.clear();
+
+    state.discard.push(card);
+    log(`${state.playerName} discarded ${cardLabel(card)} (turn ends).`);
+
+    startOfferNext(0, card);
+    render();
+  }
+
+  // CPU turns (simple demo)
+  function cpuDrawChoice(pi){
+    const top=state.discard[state.discard.length-1];
+    if(!top) return false;
+    return cpuWantsDiscard(pi, top, true);
+  }
+
+  function cpuChooseDiscard(pi){
+    const p=state.players[pi];
+    const rankCount=new Map();
+    for(const c of p.hand) rankCount.set(c.r, (rankCount.get(c.r)||0)+1);
+
+    let bestIdx=0, bestScore=-Infinity;
+    for(let i=0;i<p.hand.length;i++){
+      const c=p.hand[i];
+      let score = (c.r==="A") ? 14 : RANK_VAL(c.r);
+      if((rankCount.get(c.r)||0) >= 2) score -= 10;
+      if(dropUnlocked()){
+        const droppable = state.melds.some(m => m.type==="trio" ? canAddToTrio(c,m) : canAddToStair(c,m));
+        if(droppable) score -= 6;
+      }
+      if(score>bestScore){ bestScore=score; bestIdx=i; }
+    }
+    return bestIdx;
+  }
+
+  function cpuFindOpenSets(hand){
+    const byRank=new Map();
+    for(const c of hand){
+      const a=byRank.get(c.r)??[];
+      a.push(c); byRank.set(c.r,a);
+    }
+    const trios=[];
+    for(const a of byRank.values()) if(a.length>=3) trios.push(a.slice(0,3));
+    if(!trios.length) return null;
+
+    const stairs=[];
+    for(const s of SUITS){
+      const suitCards=hand.filter(c=>c.s===s);
+      if(suitCards.length<3) continue;
+
+      function findRuns(map){
+        const vals=[...map.keys()].sort((a,b)=>a-b);
+        if(!vals.length) return;
+        let run=[vals[0]];
+        for(let i=1;i<vals.length;i++){
+          if(vals[i]===vals[i-1]+1) run.push(vals[i]);
+          else{
+            if(run.length>=3) stairs.push(run.map(v=>map.get(v)));
+            run=[vals[i]];
+          }
+        }
+        if(run.length>=3) stairs.push(run.map(v=>map.get(v)));
+      }
+
+      const low=new Map();
+      for(const c of suitCards){
+        const v=RANK_VAL(c.r);
+        if(!low.has(v)) low.set(v,c);
+      }
+      findRuns(low);
+
+      const high=new Map();
+      for(const c of suitCards){
+        const v=(c.r==="A")?14:RANK_VAL(c.r);
+        if(!high.has(v)) high.set(v,c);
+      }
+      findRuns(high);
+    }
+
+    if(!stairs.length) return null;
+    stairs.sort((a,b)=>b.length-a.length);
+
+    for(const stair of stairs){
+      const stairIds=new Set(stair.map(c=>c.id));
+      for(const trio of trios){
+        const trioIds=new Set(trio.map(c=>c.id));
+        let overlap=0;
+        for(const id of trioIds) if(stairIds.has(id)) overlap++;
+        if(overlap===0) return {stairCards:stair, trioCards:trio};
+      }
+    }
+    return {stairCards:stairs[0], trioCards:trios[0]};
+  }
+
+  function cpuShouldOpenNow(pi){
+    const p=state.players[pi];
+    if(p.opened) return false;
+    const openSet = cpuFindOpenSets(p.hand);
+    if(!openSet) return false;
+
+    const opened = openedCount();
+    if(opened===1) return Math.random() < 0.78;
+    if(opened===0) return Math.random() < 0.35;
+    return Math.random() < 0.65;
+  }
+
+  function cpuTryOpen(pi){
+    const p=state.players[pi];
+    if(p.opened) return false;
+    const openSet=cpuFindOpenSets(p.hand);
+    if(!openSet) return false;
+    if(!cpuShouldOpenNow(pi)) return false;
+
+    createMeld(pi,"stair",openSet.stairCards);
+    createMeld(pi,"trio",openSet.trioCards);
+    const rm=new Set([...openSet.stairCards, ...openSet.trioCards].map(c=>c.id));
+    removeCardsFromHand(pi, rm);
+    p.opened=true;
+    log(`${p.name} OPENED (locked Escalera + Trio).`);
+    render();
+    return true;
+  }
+
+  function cpuTryDrop(pi){
+    const p=state.players[pi];
+    if(!p.opened) return;
+    if(!dropUnlocked()) return;
+
+    let changed=true;
+    while(changed){
+      changed=false;
+      for(let hi=0; hi<p.hand.length; hi++){
+        const c=p.hand[hi];
+        for(const m of state.melds){
+          const ok = (m.type==="trio") ? canAddToTrio(c,m) : canAddToStair(c,m);
+          if(ok){
+            m.cards.push(c);
+            p.hand.splice(hi,1);
+            log(`${p.name} dropped ${cardLabel(c)} onto a LOCKED meld.`);
+            changed=true;
+            break;
+          }
+        }
+        if(changed) break;
+      }
+    }
+  }
+
+  function cpuTakeTurn(){
+    if(blocked()) return;
+
+    const pi=state.current;
+    const p=state.players[pi];
+
+    if(state.phase==="need_draw"){
+      const takeDiscard = cpuDrawChoice(pi) && state.discard.length>0;
+      const drawn = takeDiscard ? state.discard.pop() : state.deck.pop();
+      if(drawn) p.hand.push(drawn);
+      log(`${p.name} drew ${takeDiscard ? "from discard" : "from deck"}: ${drawn ? cardLabel(drawn) : "(none)"}`);
+      state.phase="need_discard";
+      render();
+    }
+
+    cpuTryOpen(pi);
+    cpuTryDrop(pi);
+
+    const di=cpuChooseDiscard(pi);
+    const [dc]=p.hand.splice(di,1);
+    state.discard.push(dc);
+    log(`${p.name} discarded ${cardLabel(dc)} (turn ends).`);
+
+    startOfferNext(pi, dc);
+    render();
+  }
+
+  function cpuPlayAfterDraw(pi){
+    return ()=>{
+      if(blocked()) return;
+
+      cpuTryOpen(pi);
+      cpuTryDrop(pi);
+
+      const p=state.players[pi];
+      const di=cpuChooseDiscard(pi);
+      const [dc]=p.hand.splice(di,1);
+      state.discard.push(dc);
+      log(`${p.name} discarded ${cardLabel(dc)} (turn ends).`);
+
+      startOfferNext(pi, dc);
+      render();
+    };
+  }
+
+  // UI events
+  btnRestartRound.addEventListener("click", ()=>{ if(state.started) cpuDealRound1(); });
+
+  btnDrawDeck.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_draw") return;
+    if(state.deck.length<=0) return;
+    drawCard(false);
+  });
+
+  // CLICK BUNCH DECK to draw too
+  deckCard.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_draw") return;
+    if(state.deck.length<=0) return;
+    drawCard(false);
+  });
+
+  btnDrawDiscard.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_draw") return;
+    if(state.discard.length===0) return;
+    drawCard(true);
+  });
+
+  btnOpen.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_discard") return;
+    openWithSelected();
+  });
+
+  btnDropToMeld.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_discard") return;
+    dropSelectedToTargetMeld();
+  });
+
+  btnDiscard.addEventListener("click", ()=>{
+    if(blocked()) return;
+    if(state.current!==0 || state.phase!=="need_discard") return;
+    if(state.selected.size!==1) return;
+    discardSelected();
+  });
+
+  btnOfferEye.addEventListener("click", ()=> resolveOffer("eye"));
+  btnOfferPass.addEventListener("click", ()=> resolveOffer("pass"));
+
+  function startGame(){
+    const name=(nameInput.value||"").trim();
+    state.playerName = name.length ? name : "Player";
+    state.players[0].name = state.playerName;
+    state.started=true;
+    startOverlay.style.display="none";
+    cpuDealRound1();
+  }
+
+  btnStart.addEventListener("click", startGame);
+  nameInput.addEventListener("keydown", (e)=>{ if(e.key==="Enter") startGame(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
